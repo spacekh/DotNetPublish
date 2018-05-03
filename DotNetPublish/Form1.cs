@@ -14,14 +14,14 @@ namespace DotNetPublish
 {
     public partial class Form1 : Form
     {
-        string source = "", dest = "";
+        string source = "", dest = "", platform = "win-x64";
         public Form1()
         {
             InitializeComponent();
             label1.Text = "";
             label2.Text = "";
             label3.Text = "";
-            label4.Text = "";
+            textBox1.Text = "";
         }
 
         private void btnSource_Click(object sender, EventArgs e)
@@ -30,6 +30,12 @@ namespace DotNetPublish
             folderBrowser.ShowDialog();
             source = folderBrowser.SelectedPath;
             label1.Text = source;
+            
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            platform = comboBox1.SelectedItem.ToString();
         }
 
         private void btnGo_Click(object sender, EventArgs e)
@@ -39,13 +45,14 @@ namespace DotNetPublish
             {
                 Directory.SetCurrentDirectory(source);
                 Process process = new Process(); process.StartInfo.FileName = @"C:\Program Files\dotnet\dotnet.exe";
-                process.StartInfo.Arguments = $"publish -c Release -o {dest} -r win-x64";
+                process.StartInfo.Arguments = $"publish -c Release -o {dest} -r {platform}";
                 process.StartInfo.RedirectStandardError = true;
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = true;
                 process.Start();
                 process.WaitForExit();
-                label4.Text = process.StandardError.ReadToEnd() + "\n" + process.StandardOutput.ReadToEnd();
+                textBox1.Text = process.StandardError.ReadToEnd() + "\n" + process.StandardOutput.ReadToEnd();
                 label3.Text = "Done.";
             }
         }
