@@ -14,7 +14,7 @@ namespace DotNetPublish
 {
     public partial class Form1 : Form
     {
-        string source = "", dest = "", platform = "win-x64";
+        string source = "", dest = "", platform = "";
         public delegate void WriteTextDelegate(string s);
         public WriteTextDelegate text1Delegate, label3Delegate;
         public Form1()
@@ -26,6 +26,8 @@ namespace DotNetPublish
             textBox1.Text = "";
             text1Delegate = new WriteTextDelegate(AddData);
             label3Delegate = new WriteTextDelegate(ProcExited);
+            comboBox1.SelectedIndex = 0;
+            platform = comboBox1.SelectedItem.ToString();
         }
 
         private void ProcExited(string s)
