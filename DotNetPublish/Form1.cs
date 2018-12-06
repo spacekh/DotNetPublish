@@ -15,26 +15,16 @@ namespace DotNetPublish
     public partial class Form1 : Form
     {
         string source = "", dest = "", platform = "";
-        public delegate void WriteTextDelegate(string s);
-        public WriteTextDelegate text1Delegate, label3Delegate;
+        public delegate void TextDelegate(string s, Control control);
+        public TextDelegate textDelegate;
         public Form1()
         {
             InitializeComponent();
-            label1.Text = "";
-            label2.Text = "";
-            label3.Text = "";
-            textBox1.Text = "";
-            text1Delegate = new WriteTextDelegate(AddData);
-            label3Delegate = new WriteTextDelegate(ProcExited);
+            label1.Text = label2.Text = label3.Text = textBox1.Text = "";
+            textDelegate = new TextDelegate(AddData);
             comboBox1.SelectedIndex = 0;
             platform = comboBox1.SelectedItem.ToString();
-        }
-
-        private void ProcExited(string s)
-        {
-            label3.Text = "Done.";
-            label3.Refresh();
-        }
+        }        
 
         private void btnSource_Click(object sender, EventArgs e)
         {
@@ -78,18 +68,18 @@ namespace DotNetPublish
 
         private void Process_Exited(object sender, EventArgs e)
         {
-            label3.Invoke(label3Delegate, new object[] { "" });
+            label3.Invoke(textDelegate, new object[] { "Done.", label3 });
         }
 
-        private void AddData(string s)
+        private void AddData(string s, Control control)
         {
-            textBox1.AppendText(s);
-            textBox1.Refresh();
+            control.Text += s;
+            control.Refresh();
         }
 
         private void WriteToText(object sender, DataReceivedEventArgs e)
         {
-            textBox1.Invoke(text1Delegate, new object[] { e.Data + Environment.NewLine });            
+            textBox1.Invoke(textDelegate, new object[] { e.Data + Environment.NewLine, textBox1 });            
         }
 
         private void btnDest_Click(object sender, EventArgs e)
