@@ -16,13 +16,21 @@ namespace DotNetPublish
     {
         #region Initialization
         string source = "", dest = "", platform = "";
-        public delegate void TextDelegate(string s, Control control, Color? color);
-        public TextDelegate textDelegate;
+        public delegate void TextDelegate(string s, Control control);
+        //when this delegate is invoked, append the string to the control and refresh
+        public TextDelegate textDelegate =
+            (string s, Control control) =>
+             {
+                 control.Text += s;
+                 control.Refresh();
+             };
+
+
         public Form1()
         {
             InitializeComponent();
             label1.Text = label2.Text = label3.Text = textBox1.Text = "";
-            textDelegate = new TextDelegate(AddData);
+
             comboBox1.SelectedIndex = 0;
             platform = comboBox1.SelectedItem.ToString();
         }
@@ -35,7 +43,7 @@ namespace DotNetPublish
             folderBrowser.ShowDialog();
             source = folderBrowser.SelectedPath;
             label1.Text = source;
-            
+
         }
         private void btnDest_Click(object sender, EventArgs e)
         {
@@ -52,7 +60,7 @@ namespace DotNetPublish
 
         #region Async Processing
         /// <summary>
-        /// 
+        /// Sets up a Process to run the dotnet publish command and send output to the TextBox asynchronously
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -66,46 +74,26 @@ namespace DotNetPublish
             else
             {
                 Directory.SetCurrentDirectory(source);
-                //Set up the process to run dotnet publish with no command line window, with stderr and stdout redirected so we can print them to the text box
+                //Set up the process to run dotnet publish with no command line window, with stdout redirected so we can print it to the text box
                 Process process = new Process()
                 {
                     StartInfo = new ProcessStartInfo()
                     {
                         FileName = @"C:\Program Files\dotnet\dotnet.exe",
                         Arguments = $"publish -c Release -o {dest} -r {platform}",
-                        RedirectStandardError = true,
                         RedirectStandardOutput = true,
                         UseShellExecute = false,
                         CreateNoWindow = true
                     }
                 };
                 //Set up event handlers for the process
-                process.ErrorDataReceived += (sendingObj, eventArgs) => textBox1.Invoke(textDelegate, new object[] { eventArgs.Data + Environment.NewLine, textBox1, Color.Red });
-                process.OutputDataReceived += (sendingObj, eventArgs) => textBox1.Invoke(textDelegate, new object[] { eventArgs.Data + Environment.NewLine, textBox1, Color.Black });
-                process.Exited += (sendingObj, eventArgs) => label3.Invoke(textDelegate, new object[] { "Done.", label3, null });
-                process.EnableRaisingEvents = true;
+                //Since the process's error handlers run on a different thread than the form's controls, the form's Invoke method must be used to interact with the controls
+                process.OutputDataReceived += (sendingObj, eventArgs) => Invoke(textDelegate, new object[] { eventArgs.Data + Environment.NewLine, textBox1 });
+                process.Exited += (sendingObj, eventArgs) => Invoke(textDelegate, new object[] { "Done.", label3 });
+                process.EnableRaisingEvents = true; //Raise Exited event
                 process.Start();
-                process.BeginErrorReadLine();
-                process.BeginOutputReadLine();
+                process.BeginOutputReadLine(); //Start listening for OutputDataRecieved events
             }
-        }
-
-
-        private void AddData(string s, Control control, Color? color = null)
-        {
-            if (color != null && control is RichTextBox)
-            {
-                Color co = (Color)color;
-                RichTextBox c = (RichTextBox)control;
-
-                c.SuspendLayout();
-                c.SelectionColor = co;
-                c.AppendText(s);
-                c.ScrollToCaret();
-                c.ResumeLayout();
-            }
-            else control.Text += s;
-            control.Refresh();
         }
         #endregion
 
