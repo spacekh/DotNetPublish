@@ -15,6 +15,8 @@ namespace DotNetPublish
     public partial class Form1 : Form
     {
         string source = "", dest = "", platform = "win-x64";
+        public delegate void WriteTextDelegate(string s);
+        public WriteTextDelegate text1Delegate, label3Delegate;
         public Form1()
         {
             InitializeComponent();
@@ -22,6 +24,14 @@ namespace DotNetPublish
             label2.Text = "";
             label3.Text = "";
             textBox1.Text = "";
+            text1Delegate = new WriteTextDelegate(AddData);
+            label3Delegate = new WriteTextDelegate(ProcExited);
+        }
+
+        private void ProcExited(string s)
+        {
+            label3.Text = "Done.";
+            label3.Refresh();
         }
 
         private void btnSource_Click(object sender, EventArgs e)
@@ -40,6 +50,10 @@ namespace DotNetPublish
 
         private void btnGo_Click(object sender, EventArgs e)
         {
+            label3.Text = "Processing...";
+            label3.Refresh();
+            textBox1.Text = "";
+            textBox1.Refresh();
             if (String.IsNullOrWhiteSpace(source) || String.IsNullOrWhiteSpace(dest)) label3.Text = "Please select both a source and a destination.";
             else
             {
@@ -50,11 +64,30 @@ namespace DotNetPublish
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.CreateNoWindow = true;
+                process.ErrorDataReceived += new DataReceivedEventHandler(WriteToText);
+                process.OutputDataReceived += new DataReceivedEventHandler(WriteToText);
+                process.Exited += Process_Exited;
+                process.EnableRaisingEvents = true;
                 process.Start();
-                process.WaitForExit();
-                textBox1.Text = process.StandardError.ReadToEnd() + "\n" + process.StandardOutput.ReadToEnd();
-                label3.Text = "Done.";
+                process.BeginErrorReadLine();
+                process.BeginOutputReadLine();
             }
+        }
+
+        private void Process_Exited(object sender, EventArgs e)
+        {
+            label3.Invoke(label3Delegate, new object[] { "" });
+        }
+
+        private void AddData(string s)
+        {
+            textBox1.AppendText(s);
+            textBox1.Refresh();
+        }
+
+        private void WriteToText(object sender, DataReceivedEventArgs e)
+        {
+            textBox1.Invoke(text1Delegate, new object[] { e.Data + Environment.NewLine });            
         }
 
         private void btnDest_Click(object sender, EventArgs e)
