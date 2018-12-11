@@ -29,13 +29,11 @@ namespace DotNetPublish
         public Form1()
         {
             InitializeComponent();
-            label1.Text = label2.Text = label3.Text = textBox1.Text = "";
-
             comboBox1.SelectedIndex = 0;
             platform = comboBox1.SelectedItem.ToString();
         }
         #endregion
-
+        
         #region Parameter Selection
         private void btnSource_Click(object sender, EventArgs e)
         {
